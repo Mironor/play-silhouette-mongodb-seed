@@ -1,14 +1,31 @@
 package models.services
 
-import models.User
-import com.mohiva.play.silhouette.core.services.{AuthInfo, IdentityService}
+import javax.inject.Inject
+
+import com.mohiva.play.silhouette.core.LoginInfo
 import com.mohiva.play.silhouette.core.providers.CommonSocialProfile
+import com.mohiva.play.silhouette.core.services.{IdentityService, AuthInfo}
+import models.User
+import models.daos.UserDAO
+import org.bson.types.ObjectId
+import play.api.libs.concurrent.Execution.Implicits._
+
 import scala.concurrent.Future
 
 /**
  * Handles actions to users.
+ *
+ * @param userDAO The user DAO implementation.
  */
-trait UserService extends IdentityService[User] {
+class UserService @Inject() (userDAO: UserDAO) extends IdentityService[User] {
+
+  /**
+   * Retrieves a user that matches the specified login info.
+   *
+   * @param loginInfo The login info to retrieve a user.
+   * @return The retrieved user or None if no user could be retrieved for the given login info.
+   */
+  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userDAO.find(loginInfo)
 
   /**
    * Saves a user.
@@ -16,7 +33,7 @@ trait UserService extends IdentityService[User] {
    * @param user The user to save.
    * @return The saved user.
    */
-  def save(user: User): Future[User]
+  def save(user: User) = userDAO.save(user)
 
   /**
    * Saves the social profile for a user.
@@ -26,5 +43,26 @@ trait UserService extends IdentityService[User] {
    * @param profile The social profile to save.
    * @return The user for whom the profile was saved.
    */
-  def save[A <: AuthInfo](profile: CommonSocialProfile[A]): Future[User]
+  def save[A <: AuthInfo](profile: CommonSocialProfile[A]) = {
+    userDAO.find(profile.loginInfo).flatMap {
+      case Some(user) => // Update user with profile
+        userDAO.save(user.copy(
+          firstName = profile.firstName,
+          lastName = profile.lastName,
+          fullName = profile.fullName,
+          email = profile.email,
+          avatarURL = profile.avatarURL
+        ))
+      case None => // Insert a new user
+        userDAO.save(User(
+          userID = new ObjectId(),
+          loginInfo = profile.loginInfo,
+          firstName = profile.firstName,
+          lastName = profile.lastName,
+          fullName = profile.fullName,
+          email = profile.email,
+          avatarURL = profile.avatarURL
+        ))
+    }
+  }
 }

@@ -1,21 +1,21 @@
 package utils.di
 
+import com.google.inject.{AbstractModule, Provides}
+import com.mohiva.play.silhouette.contrib.daos.DelegableAuthInfoDAO
+import com.mohiva.play.silhouette.contrib.services._
+import com.mohiva.play.silhouette.contrib.utils._
+import com.mohiva.play.silhouette.core.providers._
+import com.mohiva.play.silhouette.core.providers.oauth1._
+import com.mohiva.play.silhouette.core.providers.oauth2._
+import com.mohiva.play.silhouette.core.services._
+import com.mohiva.play.silhouette.core.utils._
+import com.mohiva.play.silhouette.core.{Environment, EventBus}
+import models.User
+import models.daos._
+import models.services.UserService
+import net.codingwell.scalaguice.ScalaModule
 import play.api.Play
 import play.api.Play.current
-import com.google.inject.{ Provides, AbstractModule }
-import net.codingwell.scalaguice.ScalaModule
-import com.mohiva.play.silhouette.core.{EventBus, Environment}
-import com.mohiva.play.silhouette.core.utils._
-import com.mohiva.play.silhouette.core.services._
-import com.mohiva.play.silhouette.core.providers._
-import com.mohiva.play.silhouette.core.providers.oauth2._
-import com.mohiva.play.silhouette.core.providers.oauth1._
-import com.mohiva.play.silhouette.contrib.utils._
-import com.mohiva.play.silhouette.contrib.services._
-import com.mohiva.play.silhouette.contrib.daos.DelegableAuthInfoDAO
-import models.services.{UserService, UserServiceImpl}
-import models.daos._
-import models.User
 
 /**
  * The Guice module which wires all Silhouette dependencies.
@@ -26,8 +26,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * Configures the module.
    */
   def configure() {
-    bind[UserService].to[UserServiceImpl]
-    bind[UserDAO].to[UserDAOImpl]
     bind[DelegableAuthInfoDAO[PasswordInfo]].to[PasswordInfoDAO]
     bind[DelegableAuthInfoDAO[OAuth1Info]].to[OAuth1InfoDAO]
     bind[DelegableAuthInfoDAO[OAuth2Info]].to[OAuth2InfoDAO]
