@@ -35,7 +35,6 @@ class SilhouetteModule extends Module {
   binding toProvider new CachedCookieAuthenticatorService(CachedCookieAuthenticatorSettings(
     cookieName = inject[String]("silhouette.authenticator.cookieName"),
     cookiePath = inject[String]("silhouette.authenticator.cookiePath"),
-    cookieDomain = None,//Some(inject[String]("silhouette.authenticator.cookieDomain")),
     secureCookie = inject[Boolean]("silhouette.authenticator.secureCookie"),
     httpOnlyCookie = inject[Boolean]("silhouette.authenticator.httpOnlyCookie"),
     cookieIdleTimeout = inject[Int]("silhouette.authenticator.cookieIdleTimeout"),
@@ -47,20 +46,24 @@ class SilhouetteModule extends Module {
 
   bind[AvatarService] toProvider new GravatarService(inject[HTTPLayer])
 
-  bind [CredentialsProvider] toProvider  new CredentialsProvider(inject [AuthInfoService], inject[PasswordHasher], Seq(inject [PasswordHasher]))
+  // Auth providers //
+  bind[CredentialsProvider] toProvider new CredentialsProvider(inject[AuthInfoService], inject[PasswordHasher], Seq(inject[PasswordHasher]))
 
-  binding toProvider FacebookProvider(inject[CacheLayer], inject[HTTPLayer], OAuth2Settings(
-    authorizationURL = inject[String]("silhouette.facebook.authorizationURL"),
-    accessTokenURL = inject[String]("silhouette.facebook.accessTokenURL"),
-    redirectURL = inject[String]("silhouette.facebook.redirectURL"),
-    clientID = inject[String]("silhouette.facebook.clientID"),
-    clientSecret = inject[String]("silhouette.facebook.clientSecret"),
-    scope = Some(inject[String]("silhouette.facebook.scope"))
-  ))
+  bind[FacebookProvider] toProvider {
+    val settings = OAuth2Settings(
+      authorizationURL = inject[String]("silhouette.facebook.authorizationURL"),
+      accessTokenURL = inject[String]("silhouette.facebook.accessTokenURL"),
+      redirectURL = inject[String]("silhouette.facebook.redirectURL"),
+      clientID = inject[String]("silhouette.facebook.clientID"),
+      clientSecret = inject[String]("silhouette.facebook.clientSecret"),
+      scope = Some(inject[String]("silhouette.facebook.scope"))
+    )
 
+    FacebookProvider(inject[CacheLayer], inject[HTTPLayer], settings)
+  }
 
-  binding toProvider GoogleProvider(inject[CacheLayer], inject[HTTPLayer],
-    OAuth2Settings(
+  bind[GoogleProvider] toProvider {
+    val settings = OAuth2Settings(
       authorizationURL = inject[String]("silhouette.google.authorizationURL"),
       accessTokenURL = inject[String]("silhouette.google.accessTokenURL"),
       redirectURL = inject[String]("silhouette.google.redirectURL"),
@@ -68,9 +71,11 @@ class SilhouetteModule extends Module {
       clientSecret = inject[String]("silhouette.google.clientSecret"),
       scope = Some(inject[String]("silhouette.google.scope"))
     )
-  )
 
-  binding toProvider {
+    GoogleProvider(inject[CacheLayer], inject[HTTPLayer], settings)
+  }
+
+  bind[TwitterProvider] toProvider {
     val settings = OAuth1Settings(
       requestTokenURL = inject[String]("silhouette.twitter.requestTokenURL"),
       accessTokenURL = inject[String]("silhouette.twitter.accessTokenURL"),
@@ -83,7 +88,8 @@ class SilhouetteModule extends Module {
     TwitterProvider(inject[CacheLayer], inject[HTTPLayer], new PlayOAuth1Service(settings), settings)
   }
 
-  binding toProvider {
+  // Main env injection in each Controller //
+  bind[Environment[User, CachedCookieAuthenticator]] toProvider {
     val credentialsProvider = inject[CredentialsProvider]
     val facebookProvider = inject[FacebookProvider]
     val googleProvider = inject[GoogleProvider]
