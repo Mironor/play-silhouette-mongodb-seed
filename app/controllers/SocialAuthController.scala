@@ -1,6 +1,7 @@
 package controllers
 
-import javax.inject.Inject
+import scaldi.{Injectable, Injector}
+
 import scala.concurrent.Future
 import play.api.mvc.Action
 import play.api.libs.concurrent.Execution.Implicits._
@@ -15,12 +16,13 @@ import models.User
 /**
  * The social auth controller.
  *
- * @param env The Silhouette environment.
  */
-class SocialAuthController @Inject()(val env: Environment[User, CachedCookieAuthenticator],
-                                     val userService: UserService,
-                                     val authInfoService: AuthInfoService)
-  extends Silhouette[User, CachedCookieAuthenticator] {
+class SocialAuthController(implicit inj: Injector) extends Silhouette[User, CachedCookieAuthenticator] with Injectable {
+
+  val env = inject[Environment[User, CachedCookieAuthenticator]]
+
+  val userService: UserService = inject[UserService]
+  val authInfoService: AuthInfoService = inject[AuthInfoService]
 
   /**
    * Authenticates a user against a social provider.

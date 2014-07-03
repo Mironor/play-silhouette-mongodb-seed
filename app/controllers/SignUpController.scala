@@ -1,8 +1,7 @@
 package controllers
 
-import java.util.UUID
-import javax.inject.Inject
 import org.bson.types.ObjectId
+import scaldi.{Injectable, Injector}
 
 import scala.concurrent.Future
 import play.api.mvc.Action
@@ -17,21 +16,14 @@ import models.services.UserService
 import models.User
 import forms.SignUpForm
 
-/**
- * The sign up controller.
- *
- * @param env The Silhouette environment.
- * @param userService The user service implementation.
- * @param authInfoService The auth info service implementation.
- * @param avatarService The avatar service implementation.
- * @param passwordHasher The password hasher implementation.
- */
-class SignUpController @Inject()(implicit val env: Environment[User, CachedCookieAuthenticator],
-                                 val userService: UserService,
-                                 val authInfoService: AuthInfoService,
-                                 val avatarService: AvatarService,
-                                 val passwordHasher: PasswordHasher)
-  extends Silhouette[User, CachedCookieAuthenticator] {
+class SignUpController(implicit inj: Injector) extends Silhouette[User, CachedCookieAuthenticator] with Injectable {
+
+  val env = inject[Environment[User, CachedCookieAuthenticator]]
+
+  val userService = inject[UserService]
+  val authInfoService = inject[AuthInfoService]
+  val avatarService = inject[AvatarService]
+  val passwordHasher = inject[PasswordHasher]
 
   /**
    * Registers a new user.

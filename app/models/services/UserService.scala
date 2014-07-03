@@ -1,24 +1,19 @@
 package models.services
 
-import javax.inject.Inject
-
 import com.mohiva.play.silhouette.core.LoginInfo
 import com.mohiva.play.silhouette.core.providers.CommonSocialProfile
-import com.mohiva.play.silhouette.core.services.{IdentityService, AuthInfo}
+import com.mohiva.play.silhouette.core.services.{AuthInfo, IdentityService}
 import models.User
 import models.daos.UserDAO
 import org.bson.types.ObjectId
 import play.api.libs.concurrent.Execution.Implicits._
+import scaldi.{Injectable, Injector}
 
 import scala.concurrent.Future
 
-/**
- * Handles actions to users.
- *
- * @param userDAO The user DAO implementation.
- */
-class UserService @Inject() (userDAO: UserDAO) extends IdentityService[User] {
+class UserService(implicit inj: Injector)  extends IdentityService[User] with Injectable {
 
+  val userDAO = inject[UserDAO]
   /**
    * Retrieves a user that matches the specified login info.
    *

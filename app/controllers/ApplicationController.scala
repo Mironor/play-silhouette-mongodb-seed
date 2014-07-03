@@ -3,18 +3,13 @@ package controllers
 import models.User
 import com.mohiva.play.silhouette.core.{LogoutEvent, Environment, Silhouette}
 import com.mohiva.play.silhouette.contrib.services.CachedCookieAuthenticator
+import scaldi.{Injectable, Injector}
 import scala.concurrent.Future
-import javax.inject.Inject
 import forms._
 
-/**
- * The basic application controller.
- *
- * @param env The Silhouette environment.
- */
-class ApplicationController @Inject()(implicit val env: Environment[User, CachedCookieAuthenticator])
-  extends Silhouette[User, CachedCookieAuthenticator] {
+class ApplicationController(implicit inj: Injector) extends Silhouette[User, CachedCookieAuthenticator] with Injectable{
 
+  implicit val env = inject [Environment[User, CachedCookieAuthenticator]]
   /**
    * Handles the index action.
    *

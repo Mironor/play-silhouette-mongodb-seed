@@ -1,6 +1,7 @@
 package controllers
 
-import javax.inject.Inject
+import scaldi.{Injectable, Injector}
+
 import scala.concurrent.Future
 import play.api.mvc.Action
 import play.api.libs.concurrent.Execution.Implicits._
@@ -18,33 +19,34 @@ import forms.SignInForm
  *
  * @param env The Silhouette environment.
  */
-class CredentialsAuthController @Inject()(implicit val env: Environment[User, CachedCookieAuthenticator],
-                                          val userService: UserService,
-                                          val authInfoService: AuthInfoService)
-  extends Silhouette[User, CachedCookieAuthenticator] {
+class CredentialsAuthController(implicit inj: Injector) extends Silhouette[User, CachedCookieAuthenticator] with Injectable {
+
+  implicit val env = inject[Environment[User, CachedCookieAuthenticator]]
+
+  val userService: UserService = inject[UserService]
+  val authInfoService: AuthInfoService = inject[AuthInfoService]
 
   /**
    * Authenticates a user against the credentials provider.
    *
    * @return The result to display.
    */
-  def authenticate = Action.async { implicit request =>
-    SignInForm.form.bindFromRequest.fold(
+  def authenticate = Action.async { implicit request => SignInForm.form.bindFromRequest.fold(
 
-      formWithErrors => Future.successful(BadRequest(views.html.signIn(formWithErrors))),
+    formWithErrors => Future.successful(BadRequest(views.html.signIn(formWithErrors))),
 
-      userCredentials => providerAuthentication(userCredentials).flatMap { loginInfo =>
-        userService.retrieve(loginInfo).flatMap {
-          case Some(user) => env.authenticatorService.create(user).map {
-            case Some(authenticator) =>
-              env.eventBus.publish(LoginEvent(user, request, request2lang))
-              env.authenticatorService.send(authenticator, Redirect(routes.ApplicationController.index))
-            case None => throw new AuthenticationException("Couldn't create an authenticator")
-          }
-          case None => Future.failed(new AuthenticationException("Couldn't find user"))
+    userCredentials => providerAuthentication(userCredentials).flatMap { loginInfo =>
+      userService.retrieve(loginInfo).flatMap {
+        case Some(user) => env.authenticatorService.create(user).map {
+          case Some(authenticator) =>
+            env.eventBus.publish(LoginEvent(user, request, request2lang))
+            env.authenticatorService.send(authenticator, Redirect(routes.ApplicationController.index))
+          case None => throw new AuthenticationException("Couldn't create an authenticator")
         }
-      }.recoverWith(exceptionHandler)
-    )
+        case None => Future.failed(new AuthenticationException("Couldn't find user"))
+      }
+    }.recoverWith(exceptionHandler)
+  )
   }
 
   def providerAuthentication(userCredentials: Credentials) = env.providers.get(CredentialsProvider.Credentials) match {
